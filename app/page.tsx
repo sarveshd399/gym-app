@@ -1,21 +1,35 @@
 import Link from "next/link";
-const plans = [["Monthly", "₹1,000", "Full gym access"], ["Quarterly", "₹2,700", "Save 10%"], ["Yearly", "₹9,600", "Best value"]];
-export default function Home() {
+import { supabaseServer } from "@/lib/supabase/server";
+import { GYM } from "@/lib/config";
+
+export const dynamic = "force-dynamic";
+export default async function Home() {
+  const sb = await supabaseServer();
+  const [{ data: board }, { data: photos }] = await Promise.all([
+    sb.rpc("get_leaderboard", { lim: 5 }),
+    sb.from("gallery_photos").select("id,image_path,caption").order("created_at", { ascending: false }).limit(4),
+  ]);
+  const url = (p: string) => sb.storage.from("gallery").getPublicUrl(p).data.publicUrl;
   return (
     <main>
-      <nav className="mx-auto flex max-w-6xl items-center justify-between p-5">
-        <span className="text-xl font-extrabold tracking-tight text-orange-500">IRONFORGE</span>
-        <div className="flex gap-3"><Link href="/login" className="btn-ghost">Login</Link><Link href="/login?mode=register" className="btn">Join now</Link></div>
-      </nav>
-      <section className="mx-auto max-w-6xl px-5 py-24 text-center">
-        <h1 className="text-5xl font-extrabold tracking-tight sm:text-7xl">Train hard.<br /><span className="text-orange-500">Track everything.</span></h1>
-        <p className="mx-auto mt-6 max-w-xl text-zinc-400">Track your membership, log your workouts and get them approved by your trainer, all in one place.</p>
-        <Link href="/login?mode=register" className="btn mt-8 inline-block px-8 py-3">Get started</Link>
+      <section className="hero px-5 py-28 text-center sm:py-40">
+        <h1 className="text-5xl font-extrabold tracking-tight sm:text-7xl">{GYM.name}</h1>
+        <p className="mt-4 text-lg text-orange-400">{GYM.tagline}</p>
+        <Link href="/login?mode=register" className="btn mt-8 inline-block px-8 py-3">Join now</Link>
       </section>
-      <section className="mx-auto grid max-w-6xl gap-4 px-5 pb-20 sm:grid-cols-3">
-        {plans.map(([n, p, d]) => (<div key={n} className="card text-center"><h3 className="font-semibold">{n}</h3><p className="my-3 text-3xl font-extrabold text-orange-500">{p}</p><p className="text-sm text-zinc-400">{d}</p></div>))}
-      </section>
-      <footer className="border-t border-white/10 p-6 text-center text-sm text-zinc-500">Contact: +91 00000 00000 · your-gym@email.com</footer>
+      <div className="mx-auto grid max-w-6xl gap-6 px-5 py-14 lg:grid-cols-2">
+        <section className="card"><h2 className="mb-4 text-xl font-bold">🏆 Leaderboard <span className="text-sm font-normal text-zinc-500">· most approved exercises</span></h2>
+          {board?.length ? board.map((r: { full_name: string; total: number }, i: number) => (
+            <div key={i} className={`flex items-center justify-between border-t border-white/5 py-2 ${i === 0 ? "font-bold text-orange-400" : ""}`}>
+              <span>{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`} {r.full_name}</span><span>{r.total}</span></div>
+          )) : <p className="text-sm text-zinc-500">No approved workouts yet. Be the first!</p>}
+        </section>
+        <section className="card"><div className="mb-4 flex items-center justify-between"><h2 className="text-xl font-bold">📸 Gallery</h2><Link href="/gallery" className="btn-ghost">View all</Link></div>
+          {photos?.length ? <div className="grid grid-cols-2 gap-2">{photos.map((p) => (
+            <Link key={p.id} href="/gallery"><img src={url(p.image_path)} alt={p.caption ?? "Gym photo"} className="aspect-square w-full rounded-lg object-cover" /></Link>))}</div>
+            : <p className="text-sm text-zinc-500">No photos yet. Upload the first one!</p>}
+        </section>
+      </div>
     </main>
   );
 }

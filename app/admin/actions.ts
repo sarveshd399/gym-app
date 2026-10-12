@@ -28,8 +28,8 @@ export async function addMember(fd: FormData) {
     user_metadata: { full_name: String(fd.get("name")), phone: String(fd.get("phone")) },
   });
   if (error || !data.user) redirect("/admin?error=" + encodeURIComponent(error?.message ?? "Could not create member"));
-  const end = new Date(); end.setMonth(end.getMonth() + Number(fd.get("months") || 1));
-  await admin.from("memberships").insert({ user_id: data.user.id, plan_name: String(fd.get("plan")), start_date: today(), end_date: end.toISOString().slice(0, 10) });
+  const q = String(fd.get("plan")) === "quarterly"; const end = new Date(); end.setMonth(end.getMonth() + (q ? 3 : 1));
+  await admin.from("memberships").insert({ user_id: data.user.id, plan_name: q ? "3 Months" : "Monthly", start_date: today(), end_date: end.toISOString().slice(0, 10) });
   revalidatePath("/admin");
 }
 export async function removeMember(fd: FormData) {

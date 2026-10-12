@@ -1,5 +1,6 @@
 import { supabaseServer } from "@/lib/supabase/server";
 import { logout } from "../actions";
+import { PRICING } from "@/lib/config";
 import { addExercise, addMember, removeMember, review, setFee } from "./actions";
 
 export default async function Admin({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
@@ -36,7 +37,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
               <div><p className="font-medium">{u.full_name}</p><p className="text-zinc-500">{m ? `${m.plan_name} · ends ${m.end_date}` : "No membership"}</p></div>
               <div className="flex flex-wrap items-center gap-2">
                 <form action={setFee} className="flex items-center gap-2"><input type="hidden" name="id" value={u.id} />
-                  <input name="amount" type="number" defaultValue={f?.amount ?? 1000} className="input w-24" />
+                  <input name="amount" type="number" defaultValue={f?.amount ?? PRICING.monthly} className="input w-24" />
                   <button name="paid" value={paid ? "0" : "1"} className={paid ? "btn-ghost text-green-300" : "btn"}>{paid ? "Paid ✓ (undo)" : "Mark paid"}</button></form>
                 <form action={removeMember}><input type="hidden" name="id" value={u.id} /><button className="btn-ghost text-red-300">Remove</button></form>
               </div></div>);
@@ -47,7 +48,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
         <form action={addMember} className="card space-y-2"><h2 className="font-semibold">Add member</h2>
           <input name="name" placeholder="Full name" required className="input" /><input name="phone" placeholder="Phone" className="input" />
           <input name="email" type="email" placeholder="Email" required className="input" /><input name="password" placeholder="Temporary password" minLength={6} required className="input" />
-          <div className="flex gap-2"><input name="plan" placeholder="Plan (e.g. Monthly)" defaultValue="Monthly" className="input" /><input name="months" type="number" min={1} defaultValue={1} className="input w-24" /></div>
+          <div className="flex gap-2"><select name="plan" className="input"><option value="monthly">Monthly (₹800)</option><option value="quarterly">3 Months (₹2200)</option></select></div>
           <button className="btn w-full">Add member</button></form>
         <div className="card"><h2 className="mb-3 font-semibold">Exercises</h2>
           <form action={addExercise} className="mb-3 flex gap-2"><input name="name" placeholder="e.g. Bench Press" required className="input" /><button className="btn">Add</button></form>
